@@ -1,0 +1,12 @@
+<h1 mat-dialog-title>Add New Column</h1>
+<div mat-dialog-content>
+    <p>Please enter the name for the new column.</p>
+    <mat-form-field>
+        <mat-label>Column Name</mat-label>
+        <input matInput [(ngModel)]="columnName">
+    </mat-form-field>
+</div>
+<div mat-dialog-actions>
+    <button mat-button (click)="onNoClick()">Cancel</button>
+    <button mat-button (click)="onOkClick()" [disabled]="!columnName">Ok</button>
+</div>
