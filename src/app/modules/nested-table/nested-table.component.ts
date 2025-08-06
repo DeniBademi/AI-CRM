@@ -7,42 +7,170 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTable, MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AddColumnDialogComponent } from './add-column-dialog.component';
+import { FormsModule } from '@angular/forms';
+
+export interface PersonData {
+  name: string;
+  title: string;
+  label: string;
+  lastAction: string;
+  email: string;
+  linkedin: string;
+  phone: string;
+  assignedTo: string;
+}
+
+export interface CompanyData {
+  companyName: string;
+  favicon: string;
+  dealStage: string;
+  categories: string[];
+  leadOrigin: string;
+  dealOpened: string;
+  signals: string[];
+  people: PersonData[];
+  [key: string]: any; // Allow dynamic properties
+}
 
 @Component({
-    selector: 'app-nested-table',
-    templateUrl: './nested-table.component.html',
-    styleUrls: ['./nested-table.component.css'],
-    standalone: true,
-    imports: [
-        CommonModule,
-        MatTableModule,
-        MatSortModule,
-        MatFormFieldModule,
-        MatInputModule,
-        MatDialogModule,
-        MatButtonModule,
-    ],
-    animations: [
-        trigger('detailExpand', [
-            state('collapsed', style({ height: '0px', minHeight: '0', display: 'none' })),
-            state('expanded', style({ height: '*' })),
-            transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
-        ]),
-    ],
+  selector: 'app-nested-table',
+  templateUrl: './nested-table.component.html',
+  styleUrls: ['./nested-table.component.css'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatTableModule,
+    MatSortModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    FormsModule,
+  ],
+  animations: [
+    trigger('detailExpand', [
+      state('collapsed', style({ height: '0px', minHeight: '0', display: 'none' })),
+      state('expanded', style({ height: '*' })),
+      transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
+    ]),
+  ],
 })
 export class NestedTableComponent implements OnInit {
-
-
-  @ViewChild('outerSort', { static: true }) sort: MatSort;
+  @ViewChild(MatSort) sort: MatSort;
   @ViewChildren('innerSort') innerSort: QueryList<MatSort>;
-  @ViewChildren('innerTables') innerTables: QueryList<MatTable<Address>>;
+  @ViewChildren('innerTables') innerTables: QueryList<MatTable<PersonData>>;
 
-  dataSource: MatTableDataSource<User>;
-  usersData: User[] = [];
-  columnsToDisplay = ['name', 'email', 'phone'];
-  innerDisplayedColumns = ['street', 'zipCode', 'city'];
-  expandedElement: User | null;
+  dataSource: MatTableDataSource<CompanyData>;
+  innerDataSource: MatTableDataSource<PersonData>;
+
+  baseColumns = [
+    'expand',
+    'companyName',
+    'dealStage',
+    'categories',
+    'leadOrigin',
+    'dealOpened',
+    'signals'
+  ];
+
+  dynamicColumns: string[] = [];
+
+  innerColumnsToDisplay = [
+    'name',
+    'title',
+    'label',
+    'lastAction',
+    'actions',
+    'assignedTo'
+  ];
+
+  get allColumns(): string[] {
+    // Combine base columns, dynamic columns, and ensure actions is last
+    return [...this.baseColumns, ...this.dynamicColumns, 'actions'];
+  }
+
+  columnDefinitions = {
+    expand: { header: '', sortable: false },
+    companyName: { header: 'Company Name', sortable: true },
+    dealStage: { header: 'Deal Stage', sortable: true },
+    categories: { header: 'Categories', sortable: true },
+    leadOrigin: { header: 'Lead Origin', sortable: true },
+    dealOpened: { header: 'Deal opened', sortable: true },
+    signals: { header: 'Signals', sortable: true },
+    actions: { header: '', sortable: false }
+  };
+
+  innerColumnDefinitions = {
+    name: { header: 'Name', sortable: true },
+    title: { header: 'Title', sortable: true },
+    label: { header: 'Label', sortable: true },
+    lastAction: { header: 'Last Action', sortable: true },
+    actions: { header: 'Actions', sortable: false },
+    assignedTo: { header: 'Assigned to', sortable: true }
+  };
+
+  expandedElement: CompanyData | null = null;
+
+  // Sample data
+  sampleData: CompanyData[] = [
+    {
+      companyName: 'Acme Corp',
+      favicon: 'https://www.acme.com/favicon.ico',
+      dealStage: 'Meeting Request',
+      categories: ['b2b', 'saas', 'HR', 'recruiting'],
+      leadOrigin: 'cold email',
+      dealOpened: '92 days ago',
+      signals: ['High growth', 'Recent funding'],
+      people: [
+        {
+          name: 'John Smith',
+          title: 'VP of Sales',
+          label: 'Economic buyer',
+          lastAction: 'Email sent 2 days ago',
+          email: 'john@acme.com',
+          linkedin: 'linkedin.com/in/john',
+          phone: '+1234567890',
+          assignedTo: 'Sarah'
+        },
+        {
+          name: 'Jane Doe',
+          title: 'HR Director',
+          label: 'Decision maker',
+          lastAction: 'Meeting scheduled',
+          email: 'jane@acme.com',
+          linkedin: 'linkedin.com/in/jane',
+          phone: '+1234567891',
+          assignedTo: 'Mike'
+        }
+      ]
+    },
+    {
+      companyName: 'TechStart Inc',
+      favicon: 'https://www.techstart.com/favicon.ico',
+      dealStage: 'Evaluation',
+      categories: ['b2b', 'tech', 'startup'],
+      leadOrigin: 'referral',
+      dealOpened: '45 days ago',
+      signals: ['Expanding team', 'New office'],
+      people: [
+        {
+          name: 'Bob Wilson',
+          title: 'CEO',
+          label: 'Decision maker',
+          lastAction: 'Call completed',
+          email: 'bob@techstart.com',
+          linkedin: 'linkedin.com/in/bob',
+          phone: '+1234567892',
+          assignedTo: 'Sarah'
+        }
+      ]
+    }
+  ];
 
   constructor(
     private cd: ChangeDetectorRef,
@@ -50,106 +178,73 @@ export class NestedTableComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    USERS.forEach(user => {
-      if (user.addresses && Array.isArray(user.addresses) && user.addresses.length) {
-        this.usersData = [...this.usersData, {...user, addresses: new MatTableDataSource(user.addresses)}];
-      } else {
-        this.usersData = [...this.usersData, user];
-      }
-    });
-    this.dataSource = new MatTableDataSource(this.usersData);
+    this.dataSource = new MatTableDataSource(this.sampleData);
     this.dataSource.sort = this.sort;
+  }
+
+  toggleRow(element: CompanyData) {
+    this.expandedElement = this.expandedElement === element ? null : element;
+    if (this.expandedElement) {
+      this.innerDataSource = new MatTableDataSource(element.people);
+      this.cd.detectChanges();
+      if (this.innerSort.length > 0) {
+        this.innerDataSource.sort = this.innerSort.first;
+      }
+    }
   }
 
   addColumn() {
     const dialogRef = this.dialog.open(AddColumnDialogComponent, {
-      width: '250px',
+      width: '250px'
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.columnsToDisplay.push(result);
-        this.usersData.forEach((user: any) => user[result] = 'Sample Data');
-        this.dataSource.data = this.usersData;
+        // Add the column to definitions first
+        this.columnDefinitions[result] = {
+          header: result,
+          sortable: true
+        };
+
+        // Add empty values for the new column to all existing data
+        this.dataSource.data = this.dataSource.data.map(item => ({
+          ...item,
+          [result]: 'N/A' // Default value for new column
+        }));
+
+        // Add the column to dynamic columns array
+        this.dynamicColumns = [...this.dynamicColumns, result];
+
+        // Force refresh
+        this.cd.detectChanges();
       }
     });
   }
 
-  toggleRow(element: User) {
-    element.addresses && (element.addresses as MatTableDataSource<Address>).data.length ? (this.expandedElement = this.expandedElement === element ? null : element) : null;
-    this.cd.detectChanges();
-    this.innerTables.forEach((table, index) => (table.dataSource as MatTableDataSource<Address>).sort = this.innerSort.toArray()[index]);
-  }
-
-  formatColumnName(columnName: string): string {
-    return columnName.replace(/([A-Z])/g, ' $1');
-  }
-
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
-    this.innerTables.forEach((table, index) => (table.dataSource as MatTableDataSource<Address>).filter = filterValue.trim().toLowerCase());
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  applyInnerFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.innerDataSource.filter = filterValue.trim().toLowerCase();
+  }
+
+  getColumnHeader(column: string): string {
+    return this.columnDefinitions[column]?.header || column;
+  }
+
+  getInnerColumnHeader(column: string): string {
+    return this.innerColumnDefinitions[column]?.header || column;
+  }
+
+  isColumnSortable(column: string): boolean {
+    return this.columnDefinitions[column]?.sortable ?? true;
+  }
+
+  isInnerColumnSortable(column: string): boolean {
+    return this.innerColumnDefinitions[column]?.sortable ?? true;
   }
 }
-
-export interface User {
-  name: string;
-  email: string;
-  phone: string;
-  addresses?: Address[] | MatTableDataSource<Address>;
-}
-
-export interface Address {
-  street: string;
-  zipCode: string;
-  city: string;
-}
-
-export interface UserDataSource {
-  name: string;
-  email: string;
-  phone: string;
-  addresses?: MatTableDataSource<Address>;
-}
-
-const USERS: User[] = [
-  {
-    name: "Mason",
-    email: "mason@test.com",
-    phone: "9864785214",
-    addresses: [
-      {
-        street: "Street 1",
-        zipCode: "78542",
-        city: "Kansas"
-      },
-      {
-        street: "Street 2",
-        zipCode: "78554",
-        city: "Texas"
-      }
-    ]
-  },
-  {
-    name: "Eugene",
-    email: "eugene@test.com",
-    phone: "8786541234",
-  },
-  {
-    name: "Jason",
-    email: "jason@test.com",
-    phone: "7856452187",
-    addresses: [
-      {
-        street: "Street 5",
-        zipCode: "23547",
-        city: "Utah"
-      },
-      {
-        street: "Street 5",
-        zipCode: "23547",
-        city: "Ohio"
-      }
-    ]
-  }
-];
 

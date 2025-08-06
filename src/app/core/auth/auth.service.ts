@@ -2,9 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { AuthUtils } from 'app/core/auth/auth.utils';
 import { UserService } from 'app/core/user/user.service';
-import { catchError, Observable, of, switchMap, throwError } from 'rxjs';
-import { SupabaseService } from 'app/core/auth/supabase.service';
-import { from } from 'rxjs';
+import { catchError, Observable, of, switchMap, throwError, from } from 'rxjs';
+import { SupabaseService } from './supabase.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -91,7 +90,7 @@ export class AuthService {
      * Sign in using the access token
      */
     signInUsingToken(): Observable<any> {
-        // Sign in using the token
+        // Renew token
         return this._httpClient
             .post('api/auth/sign-in-with-token', {
                 accessToken: this.accessToken,
@@ -150,25 +149,7 @@ export class AuthService {
         password: string;
         company: string;
     }): Observable<any> {
-        return from(this._supabaseService.getSupabase.auth.signUp({
-            email: user.email,
-            password: user.password,
-            options: {
-                data: {
-                    name: user.name,
-                    company: user.company,
-                    avatar_url: ''
-                }
-            }
-        })).pipe(
-            switchMap(({ data, error }) => {
-                if (error) {
-                    return throwError(error);
-                }
-
-                return of(data);
-            })
-        );
+        return this._httpClient.post('api/auth/sign-up', user);
     }
 
     /**

@@ -1,46 +1,183 @@
-<div class="button-container">
-    <button mat-raised-button (click)="addColumn()">Add Column</button>
-</div>
+<div class="table-container mat-elevation-z8">
+    <div class="table-header">
+        <mat-form-field>
+            <mat-label>Filter</mat-label>
+            <input matInput (keyup)="applyFilter($event)" placeholder="Ex. Acme Corp" #input>
+        </mat-form-field>
+    </div>
 
-<div class="mat-elevation-z8">
-    <mat-table [dataSource]="dataSource" matSort #outerSort>
-        <ng-container [matColumnDef]="column" *ngFor="let column of columnsToDisplay">
-            <mat-header-cell *matHeaderCellDef mat-sort-header>
-                {{ formatColumnName(column) | titlecase }}
-            </mat-header-cell>
-            <mat-cell *matCellDef="let element"> {{element[column]}} </mat-cell>
-        </ng-container>
+    <div class="table-scroll-container">
+        <table mat-table [dataSource]="dataSource" matSort multiTemplateDataRows>
+            <!-- Expand Column -->
+            <ng-container matColumnDef="expand">
+                <th mat-header-cell *matHeaderCellDef></th>
+                <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button (click)="toggleRow(element); $event.stopPropagation()">
+                        <mat-icon>
+                            {{expandedElement === element ? 'expand_less' : 'expand_more'}}
+                        </mat-icon>
+                    </button>
+                </td>
+            </ng-container>
 
-        <!-- Expanded Content Column - The detail row is made up of this one column that spans across all columns -->
-        <ng-container matColumnDef="expandedDetail">
-            <td mat-cell *matCellDef="let element" [attr.colspan]="columnsToDisplay.length">
-                <div class="example-element-detail" *ngIf="element.addresses?.data.length" [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
-                    <div class="inner-table mat-elevation-z8" *ngIf="expandedElement">
-                        <mat-form-field>
-                            <input matInput (keyup)="applyFilter($event)" placeholder="Filter">
-                        </mat-form-field>
-                        <table #innerTables mat-table #innerSort="matSort" [dataSource]="element.addresses" matSort>
-                            <ng-container matColumnDef="{{innerColumn}}" *ngFor="let innerColumn of innerDisplayedColumns">
-                                <th mat-header-cell *matHeaderCellDef mat-sort-header>
-                                    {{ formatColumnName(innerColumn) | titlecase }}
-                                </th>
-                                <td mat-cell *matCellDef="let element"> {{element[innerColumn]}} </td>
-                            </ng-container>
+            <!-- Company Name Column -->
+            <ng-container matColumnDef="companyName">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader('companyName')}}
+                </th>
+                <td mat-cell *matCellDef="let element" class="company-cell">
+                    <img [src]="element.favicon" alt="Company favicon" class="company-favicon">
+                    <span>{{element.companyName}}</span>
+                </td>
+            </ng-container>
 
-                            <tr mat-header-row *matHeaderRowDef="innerDisplayedColumns"></tr>
-                            <tr mat-row *matRowDef="let row; columns: innerDisplayedColumns;"></tr>
-                        </table>
+            <!-- Deal Stage Column -->
+            <ng-container matColumnDef="dealStage">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader('dealStage')}}
+                </th>
+                <td mat-cell *matCellDef="let element">{{element.dealStage}}</td>
+            </ng-container>
+
+            <!-- Categories Column -->
+            <ng-container matColumnDef="categories">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader('categories')}}
+                </th>
+                <td mat-cell *matCellDef="let element" class="categories-cell">
+                    <span class="category-tag" *ngFor="let category of element.categories">{{category}}</span>
+                </td>
+            </ng-container>
+
+            <!-- Lead Origin Column -->
+            <ng-container matColumnDef="leadOrigin">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader('leadOrigin')}}
+                </th>
+                <td mat-cell *matCellDef="let element">{{element.leadOrigin}}</td>
+            </ng-container>
+
+            <!-- Deal Opened Column -->
+            <ng-container matColumnDef="dealOpened">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader('dealOpened')}}
+                </th>
+                <td mat-cell *matCellDef="let element">{{element.dealOpened}}</td>
+            </ng-container>
+
+            <!-- Signals Column -->
+            <ng-container matColumnDef="signals">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader('signals')}}
+                </th>
+                <td mat-cell *matCellDef="let element" class="signals-cell">
+                    <span class="signal-tag" *ngFor="let signal of element.signals">{{signal}}</span>
+                </td>
+            </ng-container>
+
+            <!-- Dynamic Columns -->
+            <ng-container *ngFor="let column of dynamicColumns" [matColumnDef]="column">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                    {{getColumnHeader(column)}}
+                </th>
+                <td mat-cell *matCellDef="let element">{{element[column]}}</td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef>
+                    <button mat-icon-button color="primary" (click)="addColumn(); $event.stopPropagation()" matTooltip="Add column">
+                        <mat-icon>add</mat-icon>
+                    </button>
+                </th>
+                <td mat-cell *matCellDef="let element"></td>
+            </ng-container>
+
+            <!-- Expanded Content Column -->
+            <ng-container matColumnDef="expandedDetail">
+                <td mat-cell *matCellDef="let element" [attr.colspan]="allColumns.length">
+                    <div class="element-detail" [@detailExpand]="element == expandedElement ? 'expanded' : 'collapsed'">
+                        <div class="expanded-content">
+                            <!-- Nested table for people -->
+                            <div class="inner-table-container">
+                                <table mat-table [dataSource]="innerDataSource" #innerSort="matSort" matSort class="inner-table">
+                                    <!-- Name Column -->
+                                    <ng-container matColumnDef="name">
+                                        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                            {{getInnerColumnHeader('name')}}
+                                        </th>
+                                        <td mat-cell *matCellDef="let person">{{person.name}}</td>
+                                    </ng-container>
+
+                                    <!-- Title Column -->
+                                    <ng-container matColumnDef="title">
+                                        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                            {{getInnerColumnHeader('title')}}
+                                        </th>
+                                        <td mat-cell *matCellDef="let person">{{person.title}}</td>
+                                    </ng-container>
+
+                                    <!-- Label Column -->
+                                    <ng-container matColumnDef="label">
+                                        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                            {{getInnerColumnHeader('label')}}
+                                        </th>
+                                        <td mat-cell *matCellDef="let person">{{person.label}}</td>
+                                    </ng-container>
+
+                                    <!-- Last Action Column -->
+                                    <ng-container matColumnDef="lastAction">
+                                        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                            {{getInnerColumnHeader('lastAction')}}
+                                        </th>
+                                        <td mat-cell *matCellDef="let person">{{person.lastAction}}</td>
+                                    </ng-container>
+
+                                    <!-- Actions Column -->
+                                    <ng-container matColumnDef="actions">
+                                        <th mat-header-cell *matHeaderCellDef>
+                                            {{getInnerColumnHeader('actions')}}
+                                        </th>
+                                        <td mat-cell *matCellDef="let person" class="actions-cell">
+                                            <button mat-icon-button color="primary" matTooltip="Email" [matTooltipPosition]="'above'">
+                                                <mat-icon>email</mat-icon>
+                                            </button>
+                                            <button mat-icon-button color="primary" matTooltip="LinkedIn" [matTooltipPosition]="'above'">
+                                                <mat-icon>link</mat-icon>
+                                            </button>
+                                            <button mat-icon-button color="primary" matTooltip="Phone" [matTooltipPosition]="'above'">
+                                                <mat-icon>phone</mat-icon>
+                                            </button>
+                                        </td>
+                                    </ng-container>
+
+                                    <!-- Assigned To Column -->
+                                    <ng-container matColumnDef="assignedTo">
+                                        <th mat-header-cell *matHeaderCellDef mat-sort-header>
+                                            {{getInnerColumnHeader('assignedTo')}}
+                                        </th>
+                                        <td mat-cell *matCellDef="let person">{{person.assignedTo}}</td>
+                                    </ng-container>
+
+                                    <tr mat-header-row *matHeaderRowDef="innerColumnsToDisplay"></tr>
+                                    <tr mat-row *matRowDef="let row; columns: innerColumnsToDisplay;"></tr>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </td>
-        </ng-container>
+                </td>
+            </ng-container>
 
-        <mat-header-row *matHeaderRowDef="columnsToDisplay"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: columnsToDisplay;"
-                 [class.example-expanded-row]="expandedElement === row"
-                 (click)="toggleRow(row)">
-        </mat-row>
-    </mat-table>
+            <!-- Header and Row Definitions -->
+            <tr mat-header-row *matHeaderRowDef="allColumns; sticky: true"></tr>
+            <tr mat-row *matRowDef="let element; columns: allColumns;"
+                class="element-row"
+                [class.expanded-row]="expandedElement === element"
+                (click)="toggleRow(element)">
+            </tr>
+            <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+        </table>
+    </div>
 </div>
 
 
