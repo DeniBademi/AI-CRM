@@ -74,8 +74,11 @@ export const appRoutes: Route[] = [
             initialData: initialDataResolver
         },
         children: [
-            {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
-            {path: 'crm', loadChildren: () => import('app/modules/admin/crm/crm.routes')},
+            {path: 'apps', children: [
+                {path: 'accounts-contacts', loadChildren: () => import('app/modules/admin/apps/accounts-contacts/accounts-contacts.routes')},
+                {path: 'tasks', loadChildren: () => import('app/modules/admin/apps/tasks/tasks.routes')},
+                {path: 'unibox', loadChildren: () => import('app/modules/admin/apps/mailbox/mailbox.routes')},
+            ]},
         ]
     }
 ];

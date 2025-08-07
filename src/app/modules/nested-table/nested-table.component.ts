@@ -119,8 +119,8 @@ export class NestedTableComponent implements OnInit {
   // Sample data
   sampleData: CompanyData[] = [
     {
-      companyName: 'Acme Corp',
-      favicon: 'https://www.acme.com/favicon.ico',
+      companyName: 'Apple',
+      favicon: 'https://www.apple.com/favicon.ico',
       dealStage: 'Meeting Request',
       categories: ['b2b', 'saas', 'HR', 'recruiting'],
       leadOrigin: 'cold email',
@@ -150,8 +150,8 @@ export class NestedTableComponent implements OnInit {
       ]
     },
     {
-      companyName: 'TechStart Inc',
-      favicon: 'https://www.techstart.com/favicon.ico',
+      companyName: 'Google',
+      favicon: 'https://www.google.com/favicon.ico',
       dealStage: 'Evaluation',
       categories: ['b2b', 'tech', 'startup'],
       leadOrigin: 'referral',
